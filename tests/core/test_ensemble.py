@@ -440,3 +440,31 @@ def test_mutual_exclusion_of_rule_policy_and_old_rule_like_policies(
     policy_config = [{"name": policy_name} for policy_name in policies]
     with pytest.warns(UserWarning):
         PolicyEnsemble.from_dict({"policies": policy_config})
+
+
+def test_end_to_end_prediction_supersedes_others(default_domain: Domain):
+    expected_action_index = 2
+    ensemble = SimplePolicyEnsemble(
+        [
+            ConstantPolicy(priority=100, predict_index=0),
+            ConstantPolicy(
+                priority=1, predict_index=expected_action_index, confidence=0.5
+            ),
+        ]
+    )
+    tracker = DialogueStateTracker.from_events("test", evts=[])
+
+    prediction, winning_policy = ensemble.probabilities_using_best_policy(
+        tracker, default_domain, RegexInterpreter()
+    )
+
+    assert max(prediction) == expected_action_index
+    assert winning_policy == ConstantPolicy.__name__
+
+
+def test_prediction_applies_must_have_policy_events():
+    pass
+
+
+def test_prediction_applies_optional_policy_events():
+    pass
